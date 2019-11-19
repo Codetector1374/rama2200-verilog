@@ -75,7 +75,8 @@ initial current_state = IDLE;
 // 4K is choosen because of we need 9Bit / Tag so it will use M4K
 // Please check altera documentation for alternative choices
 
-reg [8:0]  cache_tags [256]; //  9 Bits Tag
+
+reg [3:0]  cache_tags [256]; //  4 Bits Tag
 reg [31:0] cache_data [4096]; // 32 Bits Data
 reg cache_valid [256];
 integer i;
@@ -88,9 +89,9 @@ end
 wire cache_hit;
 wire [7:0] cache_index;
 wire [11:0] cache_word_index;
-assign cache_index = current_pc[13:6];
-assign cache_word_index = current_pc[13:2];
-assign cache_hit = (current_pc[31:14] == {9'h0, cache_tags[cache_index]})
+assign cache_index = current_pc[11:4];
+assign cache_word_index = current_pc[11:0];
+assign cache_hit = (current_pc[31:12] == {16'h0, cache_tags[cache_index]})
                 && (cache_valid[cache_index]); // Cache Hit
 // DEBUG CACHE HIT
 assign o_cache_hit = cache_hit;
@@ -106,8 +107,8 @@ wire [7:0] fetch_cache_index;
 assign fetch_cache_index = o_wb_addr[11:4];
 wire [11:0] fetch_cache_word_index;
 assign fetch_cache_word_index = o_wb_addr[11:0];
-wire [8:0] fetch_cache_tag;
-assign fetch_cache_tag = o_wb_addr[20:12];
+wire [3:0] fetch_cache_tag;
+assign fetch_cache_tag = o_wb_addr[15:12];
 
 integer cacheline_fill_counter;
 initial cacheline_fill_counter = 0;
@@ -128,7 +129,7 @@ always @(posedge i_clk) begin
         // On cache miss, go fetch
         cacheline_fill_counter <= 0;
         current_state <= FETCH_STROBE;
-        o_wb_addr <= {current_pc[31:6], 4'b0};
+        o_wb_addr <= {current_pc[29:4], 4'b0};
     end else if (
         (current_state == FETCH_WAIT_ACK || current_state == FETCH_STROBE) 
         && (i_wb_ack) && (!i_wb_err)
@@ -176,7 +177,7 @@ always @(posedge i_clk) begin
         if (current_state == IDLE && cache_hit) begin // IDLE Check is not nessary, but this improves performance
             o_buf_inst <= cache_hit_data;
             o_buf_pc <= current_pc;
-            current_pc <= current_pc + 4;
+            current_pc <= current_pc + 1;
         end else begin
             o_buf_inst <= 0;
             o_buf_pc <= 0;

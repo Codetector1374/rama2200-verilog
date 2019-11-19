@@ -215,8 +215,8 @@ int main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
   TESTBENCH<Vtl45_comp> *tb = new TESTBENCH<Vtl45_comp>();
 
-  // auto &ram = tb->m_core->tl45_comp__DOT__my_mem__DOT__mem;
-#define LOAD
+   auto &ram = tb->m_core->tl45_comp__DOT__my_mem__DOT__mem;
+//#define LOAD
 #ifdef LOAD
 
   if (argc == 1) {
@@ -298,13 +298,9 @@ int main(int argc, char **argv) {
     s.eval();
 
 #if DO_TRACE
-    if (tb->m_tickcount % 10 == 0 && 0) {
-      std::cout << "SP: " << std::hex << tb->m_core->tl45_comp__DOT__dprf__DOT__registers[14] << "\n";
-      std::cout << "PC: " << std::hex << tb->m_core->tl45_comp__DOT__decode__DOT__i_buf_pc << "\n";
-
-      if (tb->m_core->tl45_comp__DOT__decode__DOT__decode_err) {
-        exit(5);
-      }
+    if (tb->m_tickcount % 10 == 0) {
+//      std::cout << "SP: " << std::hex << tb->m_core->tl45_comp__DOT__dprf__DOT__registers[14] << "\n";
+      std::cout << "PC: " << std::hex << tb->m_core-> tl45_comp__DOT__fetch__DOT__o_buf_pc<< "\n";
     }
 #else
     if (tb->m_tickcount % 100000 == 0) {

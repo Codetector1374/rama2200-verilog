@@ -15,79 +15,12 @@ module tl45_comp(
     sdr_ba      ,
     sdr_addr    ,
     sdr_dq      ,
-    inst_decode_err,
 `ifndef VERILATOR
 	ssegs,
 `endif
-    opcode_breakout,
-    o_valid,
-    o_lwopcode,
-    o_clk,
-    o_halt,
-    out_wb_stb,
-    out_wb_err,
-    out_wb_ack,
-    out_wb_cyc,
-    out_wb_stall,
-    out_fetch_cache_hit,
-    i_sw16,
-
-    o_leds,
-    i_switches,
-
-    io_disp_data,
-    o_disp_rw,
-    o_disp_en_n,
-    o_disp_rs,
-    o_disp_on_n,
-    o_disp_blon,
-
-    sdc_o_cs,
-    sdc_o_sck,
-    sdc_o_mosi,
-    sdc_i_miso,
-
-    bot_sonar_init,
-    bot_sonar_echo,
-    bot_sonar_sel,
-    bot_sonar_blank,
-
-    gleds,
-    i_lenc_a, i_lenc_b,
-    i_renc_a, i_renc_b,
-    o_lmot_phase, o_lmot_en,
-    o_rmot_phase, o_rmot_en,
-    i_asleep, o_awake,
-    o_watchdog
+    i_sw16
 );
-
-    output wire o_lmot_phase, o_lmot_en,
-                o_rmot_phase, o_rmot_en,
-                o_watchdog, o_awake;
-    input wire i_asleep;
-    assign o_awake = !i_asleep;
-    input wire i_lenc_a, i_lenc_b, i_renc_a, i_renc_b;
-
-    output wire [7:0] gleds;
-
-    output wire bot_sonar_init;
-    input wire bot_sonar_echo;
-    output wire [2:0] bot_sonar_sel;
-    output wire bot_sonar_blank;
-
     input i_sw16;
-    output wire out_wb_stb,out_wb_err,out_wb_ack,out_wb_cyc, out_wb_stall, out_fetch_cache_hit;
-
-    inout wire [7:0] io_disp_data;
-    output wire o_valid;
-    output wire o_disp_rw, o_disp_blon, o_disp_en_n, o_disp_on_n, o_disp_rs;
-    input wire [15:0] i_switches;
-    output wire [15:0] o_leds;
-    output wire [4:0] opcode_breakout;
-    output wire [7:0] o_lwopcode;
-    output wire o_clk, o_halt;
-    assign o_clk = i_clk;
-    assign o_halt = i_halt_proc;
 `ifndef VERILATOR
     output wire [6:0] ssegs[8];
 `else
@@ -97,7 +30,6 @@ module tl45_comp(
 	output o_uart;
     input wire i_halt_proc;
     input wire i_clk, i_reset;
-    output wire inst_decode_err;
 
     // SDRAM IO
     output wire sdram_clk;
@@ -115,13 +47,6 @@ module tl45_comp(
     output wire [1:0] sdr_ba;
     output wire [11:0] sdr_addr;
     inout wire [15:0] sdr_dq;
-
-    // SD Card SPI
-    output	wire sdc_o_sck, sdc_o_mosi;
-    input	wire sdc_i_miso;
-    output wire sdc_o_cs;
-    wire sdc_o_cs_n;
-    assign sdc_o_cs = sdc_o_cs_n;
 	 
 	 // RESET
 	 wire reset;
@@ -161,13 +86,6 @@ module tl45_comp(
     reg master_i_wb_ack, master_i_wb_err;
     wire master_i_wb_stall;
     reg [31:0] master_i_wb_data;
-
-    // WISHBONE BREAKOUT
-    assign out_wb_ack = master_i_wb_ack;
-    assign out_wb_cyc = master_o_wb_cyc;
-    assign out_wb_err = master_i_wb_err;
-    assign out_wb_stb = master_o_wb_stb;
-    assign out_wb_stall = master_i_wb_stall;
 
 
     // dbgbus Wishbone
@@ -261,23 +179,9 @@ module tl45_comp(
         .wrREG(dprf_we_wreg)
     );
 
-
-    // Stages
-
-
-//    tl45_nofetch fetch(
-//        .i_clk(i_clk),
-//        .i_reset(reset),
-//        .i_pipe_stall(stall_fetch_decode),
-//        .i_pipe_flush(flush_fetch_decode),
-//        .i_new_pc(alu_buf_ld_newpc),
-//        .i_pc(alu_buf_br_pc),
-//        .o_buf_pc(fetch_buf_pc),
-//        .o_buf_inst(fetch_buf_inst)
-//    );
-
     // tl45_prefetch
-	 wire [3:0] fetch_current_state;
+	wire [3:0] fetch_current_state;
+    wire out_fetch_cache_hit;
     tl45_pfetch_with_cache fetch(
         .i_clk(i_clk),
         .i_reset(reset || i_halt_proc),
@@ -303,152 +207,152 @@ module tl45_comp(
         .current_state(fetch_current_state)
     );
 
-    wire decode_decode_err;
+    // wire decode_decode_err;
 
-    tl45_decode decode(
-        .i_clk(i_clk),
-        .i_reset(reset),
-        .o_pipe_stall(stall_fetch_decode),
-        .i_pipe_stall(stall_decode_rr),
-        .o_pipe_flush(flush_fetch_decode),
-        .i_pipe_flush(flush_decode_rr),
+    // tl45_decode decode(
+    //     .i_clk(i_clk),
+    //     .i_reset(reset),
+    //     .o_pipe_stall(stall_fetch_decode),
+    //     .i_pipe_stall(stall_decode_rr),
+    //     .o_pipe_flush(flush_fetch_decode),
+    //     .i_pipe_flush(flush_decode_rr),
 
-        .i_buf_pc(fetch_buf_pc),
-        .i_buf_inst(fetch_buf_inst),
+    //     .i_buf_pc(fetch_buf_pc),
+    //     .i_buf_inst(fetch_buf_inst),
 
-        .o_buf_pc(decode_buf_pc),
-        .o_buf_opcode(decode_buf_opcode),
-        .o_buf_ri(decode_buf_ri),
-        .o_buf_dr(decode_buf_dr),
-        .o_buf_sr1(decode_buf_sr1),
-        .o_buf_sr2(decode_buf_sr2),
-        .o_buf_imm(decode_buf_imm),
+    //     .o_buf_pc(decode_buf_pc),
+    //     .o_buf_opcode(decode_buf_opcode),
+    //     .o_buf_ri(decode_buf_ri),
+    //     .o_buf_dr(decode_buf_dr),
+    //     .o_buf_sr1(decode_buf_sr1),
+    //     .o_buf_sr2(decode_buf_sr2),
+    //     .o_buf_imm(decode_buf_imm),
 
-        .o_decode_err(decode_decode_err)
-    );
+    //     .o_decode_err(decode_decode_err)
+    // );
 
-    tl45_register_read rr(
-        .i_clk(i_clk),
-        .i_reset(reset),
-        .i_pipe_stall(stall_rr_alu || stall_rr_mem),
-        .o_pipe_stall(stall_decode_rr),
-        .i_pipe_flush(flush_rr_alu || flush_rr_mem),
-        .o_pipe_flush(flush_decode_rr),
+    // tl45_register_read rr(
+    //     .i_clk(i_clk),
+    //     .i_reset(reset),
+    //     .i_pipe_stall(stall_rr_alu || stall_rr_mem),
+    //     .o_pipe_stall(stall_decode_rr),
+    //     .i_pipe_flush(flush_rr_alu || flush_rr_mem),
+    //     .o_pipe_flush(flush_decode_rr),
 
-        .i_opcode(decode_buf_opcode),
-        .i_ri(decode_buf_ri),
-        .i_dr(decode_buf_dr),
-        .i_sr1(decode_buf_sr1),
-        .i_sr2(decode_buf_sr2),
-        .i_imm32(decode_buf_imm),
-        .i_pc(decode_buf_pc),
-        .i_decode_err(decode_decode_err),
+    //     .i_opcode(decode_buf_opcode),
+    //     .i_ri(decode_buf_ri),
+    //     .i_dr(decode_buf_dr),
+    //     .i_sr1(decode_buf_sr1),
+    //     .i_sr2(decode_buf_sr2),
+    //     .i_imm32(decode_buf_imm),
+    //     .i_pc(decode_buf_pc),
+    //     .i_decode_err(decode_decode_err),
 
-        .o_dprf_read_a1(dprf_reg1),
-        .o_dprf_read_a2(dprf_reg2),
-        .i_dprf_d1(dprf_reg1_val),
-        .i_dprf_d2(dprf_reg2_val),
+    //     .o_dprf_read_a1(dprf_reg1),
+    //     .o_dprf_read_a2(dprf_reg2),
+    //     .i_dprf_d1(dprf_reg1_val),
+    //     .i_dprf_d2(dprf_reg2_val),
 
-        .i_of1_reg(of1_reg),
-        .i_of1_data(of1_val),
-        .i_of2_reg(of2_reg),
-        .i_of2_data(of2_val),
+    //     .i_of1_reg(of1_reg),
+    //     .i_of1_data(of1_val),
+    //     .i_of2_reg(of2_reg),
+    //     .i_of2_data(of2_val),
 
-        .o_opcode(rr_buf_opcode),
-        .o_dr(rr_buf_dr),
-        .o_jmp_cond(rr_buf_jmp_cond),
-        .o_sr1_val(rr_buf_sr1_val),
-        .o_sr2_val(rr_buf_sr2_val),
-        .o_target_address_offset(rr_buf_target_address_offset),
-        .o_pc(rr_buf_pc),
-        .o_decode_err(rr_decode_err)
-    );
+    //     .o_opcode(rr_buf_opcode),
+    //     .o_dr(rr_buf_dr),
+    //     .o_jmp_cond(rr_buf_jmp_cond),
+    //     .o_sr1_val(rr_buf_sr1_val),
+    //     .o_sr2_val(rr_buf_sr2_val),
+    //     .o_target_address_offset(rr_buf_target_address_offset),
+    //     .o_pc(rr_buf_pc),
+    //     .o_decode_err(rr_decode_err)
+    // );
 
-    wire rr_decode_err;
+    // wire rr_decode_err;
 
-    assign opcode_breakout = rr_buf_opcode;
-    assign o_lwopcode = rr_buf_pc[7:0];
-    assign o_valid = !(stall_rr_alu || stall_rr_mem);
+    // assign opcode_breakout = rr_buf_opcode;
+    // assign o_lwopcode = rr_buf_pc[7:0];
+    // assign o_valid = !(stall_rr_alu || stall_rr_mem);
 
-    assign of1_reg = of1_reg_alu != 0 ? of1_reg_alu : of1_reg_mem;
-    assign of1_val = of1_reg_alu != 0 ? of1_val_alu : of1_val_mem;
+    // assign of1_reg = of1_reg_alu != 0 ? of1_reg_alu : of1_reg_mem;
+    // assign of1_val = of1_reg_alu != 0 ? of1_val_alu : of1_val_mem;
 
-    tl45_alu alu(
-        .i_clk(i_clk),
-        .i_reset(reset),
-        .i_pipe_stall(stall_alu_wb),
-        .o_pipe_stall(stall_rr_alu),
-        .i_pipe_flush(0),
-        .o_pipe_flush(flush_rr_alu),
+    // tl45_alu alu(
+    //     .i_clk(i_clk),
+    //     .i_reset(reset),
+    //     .i_pipe_stall(stall_alu_wb),
+    //     .o_pipe_stall(stall_rr_alu),
+    //     .i_pipe_flush(0),
+    //     .o_pipe_flush(flush_rr_alu),
 
-        .i_opcode(rr_buf_opcode),
-        .i_dr(rr_buf_dr),
-        .i_jmp_cond(rr_buf_jmp_cond),
-        .i_sr1_val(rr_buf_sr1_val),
-        .i_sr2_val(rr_buf_sr2_val),
-        .i_target_offset(rr_buf_target_address_offset),
-        .i_pc(rr_buf_pc),
-        .i_decode_err(rr_decode_err),
+    //     .i_opcode(rr_buf_opcode),
+    //     .i_dr(rr_buf_dr),
+    //     .i_jmp_cond(rr_buf_jmp_cond),
+    //     .i_sr1_val(rr_buf_sr1_val),
+    //     .i_sr2_val(rr_buf_sr2_val),
+    //     .i_target_offset(rr_buf_target_address_offset),
+    //     .i_pc(rr_buf_pc),
+    //     .i_decode_err(rr_decode_err),
 
-        .o_of_reg(of1_reg_alu),
-        .o_of_val(of1_val_alu),
+    //     .o_of_reg(of1_reg_alu),
+    //     .o_of_val(of1_val_alu),
 
-        .o_dr(alu_buf_dr),
-        .o_value(alu_buf_value),
-        .o_ld_newpc(alu_buf_ld_newpc),
-        .o_br_pc(alu_buf_br_pc)
-    );
+    //     .o_dr(alu_buf_dr),
+    //     .o_value(alu_buf_value),
+    //     .o_ld_newpc(alu_buf_ld_newpc),
+    //     .o_br_pc(alu_buf_br_pc)
+    // );
 
-    tl45_memory memory(
-        .i_clk(i_clk),
-        .i_reset(reset),
-        .i_pipe_stall(stall_alu_wb),
-        .o_pipe_stall(stall_rr_mem),
-        .i_pipe_flush(0),
-        .o_pipe_flush(flush_rr_mem),
+    // tl45_memory memory(
+    //     .i_clk(i_clk),
+    //     .i_reset(reset),
+    //     .i_pipe_stall(stall_alu_wb),
+    //     .o_pipe_stall(stall_rr_mem),
+    //     .i_pipe_flush(0),
+    //     .o_pipe_flush(flush_rr_mem),
 
-        .o_wb_cyc(dfetch_o_wb_cyc),
-        .o_wb_stb(dfetch_o_wb_stb),
-        .o_wb_we(dfetch_o_wb_we),
-        .o_wb_addr(dfetch_o_wb_addr),
-        .o_wb_data(dfetch_o_wb_data),
-        .o_wb_sel(dfetch_o_wb_sel),
-        .i_wb_ack(dfetch_i_wb_ack),
-        .i_wb_stall(dfetch_i_wb_stall),
-        .i_wb_err(dfetch_i_wb_err),
-        .i_wb_data(dfetch_i_wb_data),
+    //     .o_wb_cyc(dfetch_o_wb_cyc),
+    //     .o_wb_stb(dfetch_o_wb_stb),
+    //     .o_wb_we(dfetch_o_wb_we),
+    //     .o_wb_addr(dfetch_o_wb_addr),
+    //     .o_wb_data(dfetch_o_wb_data),
+    //     .o_wb_sel(dfetch_o_wb_sel),
+    //     .i_wb_ack(dfetch_i_wb_ack),
+    //     .i_wb_stall(dfetch_i_wb_stall),
+    //     .i_wb_err(dfetch_i_wb_err),
+    //     .i_wb_data(dfetch_i_wb_data),
 
-        .i_buf_opcode(rr_buf_opcode),
-        .i_buf_dr(rr_buf_dr),
-        .i_buf_sr1_val(rr_buf_sr1_val),
-        .i_buf_sr2_val(rr_buf_sr2_val),
-        .i_buf_imm(rr_buf_target_address_offset),
-        .i_buf_pc(rr_buf_pc),
+    //     .i_buf_opcode(rr_buf_opcode),
+    //     .i_buf_dr(rr_buf_dr),
+    //     .i_buf_sr1_val(rr_buf_sr1_val),
+    //     .i_buf_sr2_val(rr_buf_sr2_val),
+    //     .i_buf_imm(rr_buf_target_address_offset),
+    //     .i_buf_pc(rr_buf_pc),
 
-        .o_fwd_dr(of1_reg_mem),
-        .o_fwd_val(of1_val_mem),
+    //     .o_fwd_dr(of1_reg_mem),
+    //     .o_fwd_val(of1_val_mem),
 
-        .o_buf_dr(mem_buf_dr),
-        .o_buf_val(mem_buf_value),
-        .o_ld_newpc(mem_buf_ld_newpc),
-        .o_br_pc(mem_buf_br_pc)
-    );
+    //     .o_buf_dr(mem_buf_dr),
+    //     .o_buf_val(mem_buf_value),
+    //     .o_ld_newpc(mem_buf_ld_newpc),
+    //     .o_br_pc(mem_buf_br_pc)
+    // );
 
-    tl45_writeback writeback(
-        .i_clk(i_clk),
-        .i_reset(reset),
-        .o_pipe_stall(stall_alu_wb),
+    // tl45_writeback writeback(
+    //     .i_clk(i_clk),
+    //     .i_reset(reset),
+    //     .o_pipe_stall(stall_alu_wb),
 
-        .i_buf_dr(alu_buf_dr != 0 ? alu_buf_dr : mem_buf_dr),
-        .i_buf_val(alu_buf_dr != 0 ? alu_buf_value : mem_buf_value),
+    //     .i_buf_dr(alu_buf_dr != 0 ? alu_buf_dr : mem_buf_dr),
+    //     .i_buf_val(alu_buf_dr != 0 ? alu_buf_value : mem_buf_value),
 
-        .o_fwd_reg(of2_reg),
-        .o_fwd_val(of2_val),
+    //     .o_fwd_reg(of2_reg),
+    //     .o_fwd_val(of2_val),
 
-        .o_rf_en(dprf_we_wreg),
-        .o_rf_reg(dprf_wreg),
-        .o_rf_val(dprf_wreg_val)
-    );
+    //     .o_rf_en(dprf_we_wreg),
+    //     .o_rf_reg(dprf_wreg),
+    //     .o_rf_val(dprf_wreg_val)
+    // );
 
     // Wishbone master arbitration
     assign dfetch_i_wb_data = ibus_i_wb_data;
@@ -594,29 +498,29 @@ reg v_hook_stall;
 assign	mem_sel  = (master_o_wb_addr[29:21] == 9'h0); // mem selected
 assign	smpl_sel = (master_o_wb_addr[29:21] == 9'h1); // Simple device gets a big block
 assign  sseg_sel = (master_o_wb_addr[29:0] == 30'h400000); // SSEG
-assign  sw_led_sel = (master_o_wb_addr[29:0] == 30'h400001); // SWITCH LED
-assign lcd_sel = (master_o_wb_addr[29:0] ==     30'h400002
-                ||master_o_wb_addr[29:0] ==     30'h400003);
-assign  sdc_sel = (master_o_wb_addr[29:2] ==    28'b0000_0001_0000_0000_0000_0000_0010);
-// L/R Encoders 
-assign lenc_sel = (master_o_wb_addr[29:0] == 30'b00_0000_0100_0000_0000_0000_0000_1000);
-assign renc_sel = (master_o_wb_addr[29:0] == 30'b00_0000_0100_0000_0000_0000_0000_1001);
+// assign  sw_led_sel = (master_o_wb_addr[29:0] == 30'h400001); // SWITCH LED
+// assign lcd_sel = (master_o_wb_addr[29:0] ==     30'h400002
+//                 ||master_o_wb_addr[29:0] ==     30'h400003);
+// assign  sdc_sel = (master_o_wb_addr[29:2] ==    28'b0000_0001_0000_0000_0000_0000_0010);
+// // L/R Encoders 
+// assign lenc_sel = (master_o_wb_addr[29:0] == 30'b00_0000_0100_0000_0000_0000_0000_1000);
+// assign renc_sel = (master_o_wb_addr[29:0] == 30'b00_0000_0100_0000_0000_0000_0000_1001);
 
-assign timer_sel = (master_o_wb_addr[29:0] == 30'b00_0000_0100_0000_0000_0000_0000_1010);
+// assign timer_sel = (master_o_wb_addr[29:0] == 30'b00_0000_0100_0000_0000_0000_0000_1010);
 
-assign  wb_scomp_sel = (master_o_wb_addr[29:8] == 22'b00_0000_0100_0000_0000_0001);
+// assign  wb_scomp_sel = (master_o_wb_addr[29:8] == 22'b00_0000_0100_0000_0000_0001);
 
 wire	none_sel;
 assign	none_sel = (!smpl_sel)
     &&(!mem_sel)
     &&(!sseg_sel)
-    &&(!sw_led_sel)
-    && (!sdc_sel)
-    &&(!lcd_sel)
-    && (!wb_scomp_sel)
-    && (!lenc_sel)
-    && (!renc_sel)
-    && (!timer_sel)
+    // &&(!sw_led_sel)
+    // && (!sdc_sel)
+    // &&(!lcd_sel)
+    // && (!wb_scomp_sel)
+    // && (!lenc_sel)
+    // && (!renc_sel)
+    // && (!timer_sel)
 `ifdef VERILATOR
     && (!v_hook_stb)
 `endif
@@ -630,13 +534,13 @@ always @(posedge i_clk)
     master_i_wb_ack <= (smpl_ack)
         || (mem_ack)
         || sseg_ack
-        || sw_led_ack
-        || sdc_ack
-        || lcd_ack
-        || lenc_ack
-        || renc_ack
-        || wb_scomp_ack
-        || timer_ack
+        // || sw_led_ack
+        // || sdc_ack
+        // || lcd_ack
+        // || lenc_ack
+        // || renc_ack
+        // || wb_scomp_ack
+        // || timer_ack
 `ifdef VERILATOR
         || v_hook_ack
 `endif
@@ -654,20 +558,20 @@ always @(posedge i_clk)
         master_i_wb_data <= mem_data;
     else if (sseg_ack)
         master_i_wb_data <= sseg_data;
-    else if (sw_led_ack)
-        master_i_wb_data <= sw_led_data;
-    else if (sdc_ack)
-        master_i_wb_data <= sdc_data;
-    else if (lcd_ack)
-        master_i_wb_data <= lcd_data;
-    else if (lenc_ack)
-        master_i_wb_data <= lenc_data;
-    else if (renc_ack)
-        master_i_wb_data <= renc_data;
-    else if (timer_ack)
-        master_i_wb_data <= timer_data;
-    else if (wb_scomp_ack)
-        master_i_wb_data <= wb_scomp_data;
+    // else if (sw_led_ack)
+    //     master_i_wb_data <= sw_led_data;
+    // else if (sdc_ack)
+    //     master_i_wb_data <= sdc_data;
+    // else if (lcd_ack)
+    //     master_i_wb_data <= lcd_data;
+    // else if (lenc_ack)
+    //     master_i_wb_data <= lenc_data;
+    // else if (renc_ack)
+    //     master_i_wb_data <= renc_data;
+    // else if (timer_ack)
+    //     master_i_wb_data <= timer_data;
+    // else if (wb_scomp_ack)
+    //     master_i_wb_data <= wb_scomp_data;
     else
         master_i_wb_data <= 32'h0;
 
@@ -675,13 +579,14 @@ assign	master_i_wb_stall =
            ((smpl_sel) && (smpl_stall))
         || ((mem_sel)  && (mem_stall))
         || (sseg_sel) && (sseg_stall)
-        || sdc_sel && sdc_stall
-        || lcd_sel && lcd_stall
-        || sw_led_sel && sw_led_stall
-        || lenc_sel && lenc_stall
-        || renc_sel && renc_stall
-        || timer_sel && timer_stall
-        || wb_scomp_sel && wb_scomp_stall;
+        // || sdc_sel && sdc_stall
+        // || lcd_sel && lcd_stall
+        // || sw_led_sel && sw_led_stall
+        // || lenc_sel && lenc_stall
+        // || renc_sel && renc_stall
+        // || timer_sel && timer_stall
+        // || wb_scomp_sel && wb_scomp_stall
+        ;
 
 // Simple Device
 reg	[31:0]	smpl_register, power_counter;
@@ -725,174 +630,6 @@ always @(posedge i_clk)
     if (master_i_wb_err)
         bus_err_address <= master_o_wb_addr; // possibly wrong
 
-// IO Devices
-
-
-// Wishbone Timer
-wb_timer timer1(
-    i_clk, reset, 
-    master_o_wb_cyc, 
-    (master_o_wb_stb && timer_sel),
-    master_o_wb_we, 
-    master_o_wb_addr, master_o_wb_data,
-    master_o_wb_sel,
-    timer_ack, timer_stall, 
-    timer_data);
-
-// L/R Encoder Device
-    wire [31:0] lenc_value;
-    wb_quad_encoder left_encoder(
-    i_clk, reset, 
-    master_o_wb_cyc, 
-    (master_o_wb_stb && lenc_sel),
-    master_o_wb_we, 
-    master_o_wb_addr, master_o_wb_data,
-    master_o_wb_sel,
-    lenc_ack, lenc_stall, 
-    lenc_data,
-    i_lenc_a, i_lenc_b, lenc_value);
-
-    wire [31:0] renc_value;
-    wb_quad_encoder right_encoder(
-    i_clk, reset, 
-    master_o_wb_cyc, 
-    (master_o_wb_stb && renc_sel),
-    master_o_wb_we, 
-    master_o_wb_addr, master_o_wb_data,
-    master_o_wb_sel,
-    renc_ack, renc_stall, 
-    renc_data,
-    i_renc_a, i_renc_b, renc_value);
-
-
-    wire sdc_int;
-    wire [31:0] sdc_debug;
-
-    sdspi #(
-        .OPT_SPI_ARBITRATION(0),
-        .OPT_CARD_DETECT(0),
-        .INITIAL_CLKDIV(7'h3e),
-        .STARTUP_CLOCKS(0)
-    ) sdcard(
-        .i_clk(i_clk),
-
-        .i_wb_cyc(master_o_wb_cyc),
-        .i_wb_stb(master_o_wb_stb && sdc_sel),
-        .i_wb_we(master_o_wb_we),
-        // remap address to what sdspi expects
-        .i_wb_addr(master_o_wb_addr[1:0]),
-        .i_wb_data(master_o_wb_data),
-        .i_wb_sel(master_o_wb_sel),
-        .o_wb_stall(sdc_stall),
-        .o_wb_ack(sdc_ack),
-        .o_wb_data(sdc_data),
-
-        .o_cs_n(sdc_o_cs_n),
-        .o_sck(sdc_o_sck),
-        .o_mosi(sdc_o_mosi),
-        .i_miso(sdc_i_miso),
-        .i_card_detect(1'b1),
-
-        .o_int(sdc_int),
-        .i_bus_grant(1'b1),
-        .o_debug(sdc_debug)
-    );
-
-    // Wishbone Transceiver
-
-    wire o_sc_iocyc, o_sc_iowr, o_sc_clk;
-    wire [7:0] o_sc_ioaddr;
-    wire [15:0] io_sc_iodata;
-
-    wb_scomp_trans scomp(
-        .i_clk(i_clk),
-        .i_reset(reset),
-        .i_wb_cyc(master_o_wb_cyc),
-        .i_wb_stb(master_o_wb_stb && wb_scomp_sel),
-        .i_wb_we(master_o_wb_we),
-        .i_wb_addr(master_o_wb_addr),
-        .i_wb_data(master_o_wb_data),
-        .i_wb_sel(master_o_wb_sel),
-        .o_wb_stall(wb_scomp_stall),
-        .o_wb_ack(wb_scomp_ack),
-        .o_wb_data(wb_scomp_data),
-
-        .o_sc_clk(o_sc_clk),
-        .o_sc_iocyc(o_sc_iocyc),
-        .o_sc_iowr(o_sc_iowr),
-        .o_sc_ioaddr(o_sc_ioaddr),
-        .io_sc_iodata(io_sc_iodata)
-    );
-`ifndef VERILATOR
-green_leds scomp_leds(o_sc_clk, o_sc_ioaddr, io_sc_iodata, o_sc_iocyc, o_sc_iowr, gleds);
-
-wire clk_64hz;
-clk_divider #(.OCLK_FREQ(32)) sixty_four_hz_gen(i_clk, reset, clk_64hz);
-
-wire clk_100mhz, locked_100mhz;
-main_pll master_pll(i_clk, clk_100mhz, locked_100mhz);
-
-wire l_int_warn;
-wire l_watchdog;
-wire [15:0] l_yeet;
-VEL_CONTROL left(
-    clk_100mhz,
-    !reset,
-    (o_sc_iocyc && o_sc_ioaddr == 8'h83),
-    o_sc_iowr,
-    io_sc_iodata,
-    lenc_value,
-    clk_64hz,
-    !i_asleep,
-    1,
-    o_lmot_phase,
-    o_lmot_en,
-    l_int_warn,
-    l_watchdog,
-    l_yeet
-);
-
-wire r_int_warn;
-wire r_watchdog;
-wire [15:0] r_yeet;
-VEL_CONTROL right(
-    clk_100mhz,
-    !reset,
-    (o_sc_iocyc && o_sc_ioaddr == 8'h8B),
-    o_sc_iowr,
-    io_sc_iodata,
-    renc_value,
-    clk_64hz,
-    !i_asleep,
-    1,
-    o_rmot_phase,
-    o_rmot_en,
-    r_int_warn,
-    r_watchdog,
-    r_yeet
-);
-assign o_watchdog = (r_watchdog || l_watchdog);
-// SCOMP IODEVICES
-// 294 CLK DIV
-wire sonar_clk;
-clk_divider #(.OCLK_FREQ(85_000)) one_seventyK_clk(i_clk, reset, sonar_clk);
-
-wire sonar_int;
-SONAR fuck_sonar(
-    sonar_clk,
-    !reset,
-    (o_sc_ioaddr >= 8'hA0 && o_sc_ioaddr <= 8'hB7 && o_sc_iocyc),
-    o_sc_iowr,
-    bot_sonar_echo,
-    o_sc_ioaddr[4:0],
-    bot_sonar_init,
-    bot_sonar_blank,
-    bot_sonar_sel,
-    sonar_int,
-    io_sc_iodata
-);
-`endif
-
 // SevenSeg
 wb_sevenseg sevenseg_disp(
     i_clk,
@@ -909,47 +646,47 @@ wb_sevenseg sevenseg_disp(
 `ifndef VERILATOR
     ssegs,
 `endif
-    (i_sw16 ? sdc_debug : fetch_buf_pc),
-    inst_decode_err || i_sw16
+    fetch_buf_pc,
+    i_sw16
 );
 
-// LCDHD47780
-wb_lcdhd47780 de2_lcd(
-    i_clk,
-    reset,
-    master_o_wb_cyc,
-    (master_o_wb_stb && lcd_sel),
-    master_o_wb_we,
-    master_o_wb_addr,
-    master_o_wb_data,
-    master_o_wb_sel,
-    lcd_ack,
-    lcd_stall,
-    lcd_data,
-    io_disp_data,
-    o_disp_rw,
-    o_disp_en_n,
-    o_disp_rs,
-    o_disp_on_n,
-    o_disp_blon
-);
+// // LCDHD47780
+// wb_lcdhd47780 de2_lcd(
+//     i_clk,
+//     reset,
+//     master_o_wb_cyc,
+//     (master_o_wb_stb && lcd_sel),
+//     master_o_wb_we,
+//     master_o_wb_addr,
+//     master_o_wb_data,
+//     master_o_wb_sel,
+//     lcd_ack,
+//     lcd_stall,
+//     lcd_data,
+//     io_disp_data,
+//     o_disp_rw,
+//     o_disp_en_n,
+//     o_disp_rs,
+//     o_disp_on_n,
+//     o_disp_blon
+// );
 
-// Sw_LED
-wb_switch_led de2_switch_led(
-    i_clk,
-    reset,
-    master_o_wb_cyc,
-    (master_o_wb_stb && sw_led_sel),
-    master_o_wb_we,
-    master_o_wb_addr,
-    master_o_wb_data,
-    master_o_wb_sel,
-    sw_led_ack,
-    sw_led_stall,
-    sw_led_data,
-    o_leds,
-    i_switches
-);
+// // Sw_LED
+// wb_switch_led de2_switch_led(
+//     i_clk,
+//     reset,
+//     master_o_wb_cyc,
+//     (master_o_wb_stb && sw_led_sel),
+//     master_o_wb_we,
+//     master_o_wb_addr,
+//     master_o_wb_data,
+//     master_o_wb_sel,
+//     sw_led_ack,
+//     sw_led_stall,
+//     sw_led_data,
+//     o_leds,
+//     i_switches
+// );
 
 `ifdef VERILATOR
     memdev #(16) my_mem(
