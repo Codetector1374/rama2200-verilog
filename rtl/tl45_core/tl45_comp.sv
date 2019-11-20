@@ -209,27 +209,25 @@ module tl45_comp(
 
     // wire decode_decode_err;
 
-    // tl45_decode decode(
-    //     .i_clk(i_clk),
-    //     .i_reset(reset),
-    //     .o_pipe_stall(stall_fetch_decode),
-    //     .i_pipe_stall(stall_decode_rr),
-    //     .o_pipe_flush(flush_fetch_decode),
-    //     .i_pipe_flush(flush_decode_rr),
+    tl45_decode decode(
+        .i_clk(i_clk),
+        .i_reset(reset),
+        .o_pipe_stall(stall_fetch_decode),
+        .i_pipe_stall(stall_decode_rr),
+        .o_pipe_flush(flush_fetch_decode),
+        .i_pipe_flush(flush_decode_rr),
 
-    //     .i_buf_pc(fetch_buf_pc),
-    //     .i_buf_inst(fetch_buf_inst),
+        .i_buf_pc(fetch_buf_pc),
+        .i_buf_inst(fetch_buf_inst),
 
-    //     .o_buf_pc(decode_buf_pc),
-    //     .o_buf_opcode(decode_buf_opcode),
-    //     .o_buf_ri(decode_buf_ri),
-    //     .o_buf_dr(decode_buf_dr),
-    //     .o_buf_sr1(decode_buf_sr1),
-    //     .o_buf_sr2(decode_buf_sr2),
-    //     .o_buf_imm(decode_buf_imm),
-
-    //     .o_decode_err(decode_decode_err)
-    // );
+        .o_buf_pc(decode_buf_pc),
+        .o_buf_opcode(decode_buf_opcode),
+        .o_buf_ri(decode_buf_ri),
+        .o_buf_dr(decode_buf_dr),
+        .o_buf_sr1(decode_buf_sr1),
+        .o_buf_sr2(decode_buf_sr2),
+        .o_buf_imm(decode_buf_imm)
+    );
 
     // tl45_register_read rr(
     //     .i_clk(i_clk),

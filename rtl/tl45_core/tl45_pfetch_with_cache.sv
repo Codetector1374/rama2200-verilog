@@ -45,7 +45,7 @@ input wire [31:0] i_wb_data;
 output reg [31:0] o_buf_pc, o_buf_inst;
 initial begin
     o_buf_pc = 0;
-    o_buf_inst = 0;
+    o_buf_inst = 32'hFFFFFFFF;
 end
 
 
@@ -71,7 +71,7 @@ initial current_state = IDLE;
 // Quote RAMA: Designed the hardware in a brain damage way.
 // This is exactally that "Brain Damage Way"
 // CACHE
-// We have 4K L1 Cache
+// We have 4K Word L1 Cache
 // 4K is choosen because of we need 9Bit / Tag so it will use M4K
 // Please check altera documentation for alternative choices
 
@@ -165,11 +165,11 @@ always @(posedge i_clk) begin
     if (i_reset) begin // STALL
         current_pc <= 0;
         o_buf_pc <= 0;
-        o_buf_inst <= 0;
+        o_buf_inst <= 32'hFFFFFFFF ;
     end 
     else if (i_pipe_flush || i_new_pc) begin // FLUSH 
         o_buf_pc <= 0;
-        o_buf_inst <= 0;
+        o_buf_inst <= 32'hFFFFFFFF;
         if (i_new_pc)
             current_pc <= i_pc;
     end
@@ -179,7 +179,7 @@ always @(posedge i_clk) begin
             o_buf_pc <= current_pc;
             current_pc <= current_pc + 1;
         end else begin
-            o_buf_inst <= 0;
+            o_buf_inst <= 32'hFFFFFFFF;
             o_buf_pc <= 0;
         end
     end
