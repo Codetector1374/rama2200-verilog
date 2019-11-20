@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.102 (w)1999-2019 BSI
-[*] Wed Nov 20 05:57:42 2019
+[*] Wed Nov 20 17:36:19 2019
 [*]
-[dumpfile] "/home/codetector/projects/cs2200/rama2200-verilog/verilator/cmake-build-debug/trace.vcd"
-[dumpfile_mtime] "Wed Nov 20 05:56:55 2019"
-[dumpfile_size] 872350
-[savefile] "/home/codetector/projects/cs2200/rama2200-verilog/verilator/debug_wave_setup.gtkw"
-[timestart] 503
-[size] 2556 1396
+[dumpfile] "/home/codetector/projects/rama2200-v/verilator/cmake-build-debug/trace.vcd"
+[dumpfile_mtime] "Wed Nov 20 17:34:58 2019"
+[dumpfile_size] 2899574
+[savefile] "/home/codetector/projects/rama2200-v/verilator/debug_wave_setup.gtkw"
+[timestart] 582
+[size] 1916 1029
 [pos] -1 -1
-*-4.000000 541 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.000000 720 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.tl45_comp.
 [sst_width] 348
@@ -49,6 +49,8 @@ TOP.tl45_comp.rr_buf_target_address[31:0]
 TOP.tl45_comp.rr_buf_skp_mode
 @200
 -ALU
+@23
+TOP.tl45_comp.alu.i_pc[31:0]
 @22
 TOP.tl45_comp.alu_buf_dr[3:0]
 TOP.tl45_comp.alu_buf_value[31:0]
@@ -56,5 +58,30 @@ TOP.tl45_comp.alu_buf_value[31:0]
 TOP.tl45_comp.alu_buf_ld_newpc
 @22
 TOP.tl45_comp.alu_buf_br_pc[31:0]
+@200
+-MEM
+@22
+TOP.tl45_comp.mem_buf_dr[3:0]
+TOP.tl45_comp.mem_buf_value[31:0]
+@200
+-MEM_WB
+@22
+TOP.tl45_comp.memory.o_wb_addr[29:0]
+@28
+TOP.tl45_comp.memory.o_wb_cyc
+@22
+TOP.tl45_comp.memory.o_wb_sel[3:0]
+@28
+TOP.tl45_comp.memory.o_wb_stb
+TOP.tl45_comp.memory.o_wb_we
+@200
+-STALLS
+@28
+TOP.tl45_comp.stall_rr_mem
+@200
+-Registers
+@22
+TOP.tl45_comp.dprf.registers(0)[31:0]
+TOP.tl45_comp.dprf.registers(12)[31:0]
 [pattern_trace] 1
 [pattern_trace] 0

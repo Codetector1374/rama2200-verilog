@@ -298,40 +298,38 @@ module tl45_comp(
         .o_br_pc(alu_buf_br_pc)
     );
 
-    // tl45_memory memory(
-    //     .i_clk(i_clk),
-    //     .i_reset(reset),
-    //     .i_pipe_stall(stall_alu_wb),
-    //     .o_pipe_stall(stall_rr_mem),
-    //     .i_pipe_flush(0),
-    //     .o_pipe_flush(flush_rr_mem),
+    tl45_memory memory(
+        .i_clk(i_clk),
+        .i_reset(reset),
+        .i_pipe_stall(stall_alu_wb),
+        .o_pipe_stall(stall_rr_mem),
+        .i_pipe_flush(0),
+        .o_pipe_flush(flush_rr_mem),
 
-    //     .o_wb_cyc(dfetch_o_wb_cyc),
-    //     .o_wb_stb(dfetch_o_wb_stb),
-    //     .o_wb_we(dfetch_o_wb_we),
-    //     .o_wb_addr(dfetch_o_wb_addr),
-    //     .o_wb_data(dfetch_o_wb_data),
-    //     .o_wb_sel(dfetch_o_wb_sel),
-    //     .i_wb_ack(dfetch_i_wb_ack),
-    //     .i_wb_stall(dfetch_i_wb_stall),
-    //     .i_wb_err(dfetch_i_wb_err),
-    //     .i_wb_data(dfetch_i_wb_data),
+        .o_wb_cyc(dfetch_o_wb_cyc),
+        .o_wb_stb(dfetch_o_wb_stb),
+        .o_wb_we(dfetch_o_wb_we),
+        .o_wb_addr(dfetch_o_wb_addr),
+        .o_wb_data(dfetch_o_wb_data),
+        .o_wb_sel(dfetch_o_wb_sel),
+        .i_wb_ack(dfetch_i_wb_ack),
+        .i_wb_stall(dfetch_i_wb_stall),
+        .i_wb_err(dfetch_i_wb_err),
+        .i_wb_data(dfetch_i_wb_data),
 
-    //     .i_buf_opcode(rr_buf_opcode),
-    //     .i_buf_dr(rr_buf_dr),
-    //     .i_buf_sr1_val(rr_buf_sr1_val),
-    //     .i_buf_sr2_val(rr_buf_sr2_val),
-    //     .i_buf_imm(rr_buf_target_address_offset),
-    //     .i_buf_pc(rr_buf_pc),
+        .i_pc(rr_buf_pc),
+        .i_buf_opcode(rr_buf_opcode),
+        .i_dr(rr_buf_dr),
+        .i_sr1_val(rr_buf_sr1_val),
+        .i_sr2_val(rr_buf_sr2_val),
+        .i_target_address(rr_buf_target_address),
 
-    //     .o_fwd_dr(of1_reg_mem),
-    //     .o_fwd_val(of1_val_mem),
+        .o_fwd_dr(of1_reg_mem),
+        .o_fwd_val(of1_val_mem),
 
-    //     .o_buf_dr(mem_buf_dr),
-    //     .o_buf_val(mem_buf_value),
-    //     .o_ld_newpc(mem_buf_ld_newpc),
-    //     .o_br_pc(mem_buf_br_pc)
-    // );
+        .o_buf_dr(mem_buf_dr),
+        .o_buf_val(mem_buf_value)
+    );
 
     tl45_writeback writeback(
         .i_clk(i_clk),

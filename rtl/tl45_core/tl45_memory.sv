@@ -11,16 +11,18 @@ module tl45_memory(
     i_wb_ack, i_wb_stall, i_wb_err,
     i_wb_data,
 
-    // Buffer In
+    // Buffer from previous stage
+    i_pc,
     i_buf_opcode,
-    i_buf_dr, i_buf_sr1_val, i_buf_sr2_val, i_buf_imm,
-    i_buf_pc,
+    i_dr,
+    i_sr1_val, i_sr2_val,
+    i_target_address,
 
     // Forwarding
     o_fwd_dr, o_fwd_val,
 
     // Buffer Out
-    o_buf_dr, o_buf_val, o_ld_newpc, o_br_pc
+    o_buf_dr, o_buf_val
 );
 
 input wire i_clk, i_reset;
@@ -45,10 +47,11 @@ end
 input wire i_wb_ack, i_wb_stall, i_wb_err;
 input wire [31:0] i_wb_data;
 
-// Buffer In
-input wire [4:0] i_buf_opcode;
-input wire [3:0] i_buf_dr;
-input wire [31:0] i_buf_sr1_val, i_buf_sr2_val, i_buf_imm, i_buf_pc;
+// Input From previous stage
+input wire [3:0] i_buf_opcode;
+input wire [3:0] i_dr;
+input wire [31:0] i_sr1_val, i_sr2_val;
+input wire [31:0] i_target_address, i_pc;
 
 // Forwarding
 output reg [3:0] o_fwd_dr;
@@ -61,15 +64,22 @@ end
 // Buffer Out
 output reg [3:0] o_buf_dr;
 output reg [31:0] o_buf_val;
-output reg o_ld_newpc;
-output reg [31:0] o_br_pc;
 initial begin
     o_buf_dr = 0;
     o_buf_val = 0;
-    o_ld_newpc = 0;
-    o_br_pc = 0;
 end
 
+
+localparam OP_ADD = 4'b0000,
+    OP_NAND = 4'b0001,
+    OP_ADDI = 4'b0010,
+    OP_LW = 4'b0011,
+    OP_SW = 4'b0100,
+    OP_GOTO = 4'b0101,
+    OP_JALR = 4'b0110,
+    OP_HALT = 4'b0111,
+    OP_SKP = 4'b1000,
+    OP_LEA = 4'b1001;
 
 // Internal
 
@@ -94,129 +104,33 @@ end
 // are sent.
 
 wire start_tx;
-assign start_tx = (i_buf_opcode == 5'h10 ||   // LHW
-                   i_buf_opcode == 5'h11 ||   // LHWSE
-                   i_buf_opcode == 5'h14 ||   // LW
-                   i_buf_opcode == 5'h15 ||   // SW
-                   i_buf_opcode == 5'h12 ||   // LB
-                   i_buf_opcode == 5'h0F ||   // LBSE
-                   i_buf_opcode == 5'h13 ||   // SB
-                   i_buf_opcode == 5'h16 ||   // SHW
-                   is_call || is_ret);
+assign start_tx = (i_buf_opcode == OP_SW || 
+                   i_buf_opcode == OP_LW);
 
 wire is_io;
 assign is_io =    0;
 
 wire is_write;
-assign is_write = (i_buf_opcode == 5'h15 ||   // SW
-                   i_buf_opcode == 5'h13 ||   // SB
-                   i_buf_opcode == 5'h16 ||   // SHW
-                   is_call);
-
-wire is_byte_operation;
-assign is_byte_operation = (i_buf_opcode == 5'h12 ||  // LB
-                            i_buf_opcode == 5'h0F ||  // LBSE
-                            i_buf_opcode == 5'h13 );  // SB
-
-wire is_half_word_operation;
-assign is_half_word_operation = (i_buf_opcode == 5'h10 || // LHW
-                                 i_buf_opcode == 5'h11 || // LHWSE
-                                 i_buf_opcode == 5'h16    // SHW
-                                );
-
-wire is_call, is_ret;
-assign is_call = i_buf_opcode == 5'h0D;
-assign is_ret = i_buf_opcode == 5'h0E;
+assign is_write = (i_buf_opcode == OP_SW);
 
 reg [31:0] mem_addr;
 always @(*)
-    if (is_io)
-        mem_addr = {16'hff, i_buf_imm[13:0], 2'b00};
-    else if (is_call)
-        mem_addr = i_buf_sr2_val - 4;
-    else if (is_ret)
-        mem_addr = i_buf_sr2_val;
-    else
-        mem_addr = i_buf_sr1_val + i_buf_imm;
+        mem_addr = i_sr1_val + i_target_address;
 
 wire [31:0] wr_val;
-assign wr_val = is_io ? i_buf_sr1_val : i_buf_sr2_val;
+assign wr_val = i_sr2_val;
 
 reg [3:0] wb_sel_val;
 always @(*)
-    if (is_byte_operation)
-        case(mem_addr[1:0])
-            3: wb_sel_val = 4'b0001;
-            2: wb_sel_val = 4'b0010;
-            1: wb_sel_val = 4'b0100;
-            default: wb_sel_val = 4'b1000;
-        endcase
-    else if (is_half_word_operation)
-        case(mem_addr[1])
-            1: wb_sel_val = 4'b0011;
-            default: wb_sel_val = 4'b1100;
-        endcase
-    else
-        wb_sel_val = 4'b1111;
+    wb_sel_val = 4'b1111;
 
 reg [31:0] write_data;
 always @(*)
-    if (is_byte_operation)
-        case(mem_addr[1:0])
-            3: write_data = wr_val;
-            2: write_data = wr_val << 8;
-            1: write_data = wr_val << 16;
-            default: write_data = wr_val << 24;
-        endcase
-    else if (is_half_word_operation)
-        case(mem_addr[1])
-            1: write_data = wr_val;
-            default: write_data = wr_val << 16;
-        endcase
-    else if (is_call)
-        write_data = i_buf_pc + 4;
-    else
         write_data = wr_val;
 
-
-// WOW Verilog, you are like Tiger
-function [15:0] trunc_32_to_8(input [31:0] val32);
-  trunc_32_to_8 = {8'h0, val32[7:0]};
-endfunction
-
-function [15:0] trunc_32_to_16(input [31:0] val32);
-  trunc_32_to_16 = val32[15:0];
-endfunction
-
-
 reg [31:0] in_data;
-reg [15:0] shifted_i_data;
 always @(*)
-    if (is_byte_operation) begin
-        case(mem_addr[1:0])
-            3: shifted_i_data = trunc_32_to_8(i_wb_data);
-            2: shifted_i_data = trunc_32_to_8(i_wb_data >> 8);
-            1: shifted_i_data = trunc_32_to_8(i_wb_data >> 16);
-            default: shifted_i_data = trunc_32_to_8(i_wb_data >> 24);
-        endcase
-        if (i_buf_opcode == 5'h0F) // LWSE
-            in_data = {{24{shifted_i_data[7]}}, shifted_i_data[7:0]};
-        else
-            in_data = {24'h0, shifted_i_data[7:0]};
-    end
-    else if (is_half_word_operation) begin
-        case(mem_addr[1])
-            1: shifted_i_data = trunc_32_to_16(i_wb_data);
-            default: shifted_i_data = trunc_32_to_16(i_wb_data >> 16);
-        endcase
-        if (i_buf_opcode == 5'h11) // LHWSE
-            in_data = {{16{shifted_i_data[15]}}, shifted_i_data};
-        else
-            in_data = {16'h0, shifted_i_data};
-    end
-    else
-        in_data = i_wb_data;
-
+    in_data = i_wb_data;
 
 localparam
     IDLE = 0,
@@ -262,11 +176,11 @@ reg [31:0] temp_read;
 always @(*)
     case (current_state)
         READ_STALLED_OUT: begin
-            o_fwd_dr = !is_write ? i_buf_dr : 0;
+            o_fwd_dr = !is_write ? i_dr : 0;
             o_fwd_val = !is_write ? temp_read : 0;
         end
         READ_WAIT_ACK: begin
-            o_fwd_dr = !i_pipe_stall ? i_buf_dr : 0;
+            o_fwd_dr = !i_pipe_stall ? i_dr : 0;
             o_fwd_val = !i_pipe_stall ? (i_wb_err ? 32'h13371337 : i_wb_data) : 0;
         end
         default: begin
@@ -290,7 +204,7 @@ always @(posedge i_clk) begin
     end
     else if ((current_state == IDLE) && start_tx) begin
         current_state <= is_write ? WRITE_STROBE : READ_STROBE;
-        o_wb_addr <= mem_addr[31:2];
+        o_wb_addr <= mem_addr[29:0];
         o_wb_sel <= wb_sel_val;
 
         if (is_write)
@@ -313,7 +227,7 @@ always @(posedge i_clk) begin
             if (i_pipe_stall)
                 temp_read <= 32'h13371337;
             else begin
-                o_buf_dr <= i_buf_dr;
+                o_buf_dr <= i_dr;
                 o_buf_val <= 32'h13371337;
             end
         end
@@ -322,56 +236,30 @@ always @(posedge i_clk) begin
 
         if (current_state == READ_WAIT_ACK)
             current_state <= i_pipe_stall ? READ_STALLED_OUT : READ_OUT;
-        else if (is_call)
-            current_state <= READ_OUT;
         else
             current_state <= READ_OUT;
 
         o_wb_sel <= 0;
 
-        if (is_call) begin
-            o_ld_newpc <= 1;
-            o_br_pc <= i_buf_sr1_val + i_buf_imm;
-        end
-
-        if (is_call || is_ret)
-            o_pipe_flush <= 1;
-
         if (!is_write) begin
             if (i_pipe_stall)
                 temp_read <= in_data;
             else begin
-                if (is_ret) begin
-                    o_ld_newpc <= 1;
-                    o_br_pc <= in_data;
-                end
-                else begin
-                    o_buf_dr <= i_buf_dr;
-                    o_buf_val <= in_data;
-                end
+                o_buf_dr <= i_dr;
+                o_buf_val <= in_data;
             end
         end
     end
     else if (current_state == READ_STALLED_OUT && !i_pipe_stall) begin
         current_state <= READ_OUT;
-
-        if (is_ret) begin
-            o_ld_newpc <= 1;
-            o_br_pc <= temp_read;
-        end
-        else begin
-            o_buf_dr <= i_buf_dr;
-            o_buf_val <= temp_read;
-        end
-
+        o_buf_dr <= i_dr;
+        o_buf_val <= temp_read;
         temp_read <= 0;
     end
     else if (current_state == READ_OUT) begin
         current_state <= IDLE;
         o_buf_dr <= 0;
         o_buf_val <= 0;
-        o_ld_newpc <= 0;
-        o_br_pc <= 0;
         o_pipe_flush <= 0;
     end
 end

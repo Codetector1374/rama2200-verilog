@@ -75,7 +75,7 @@ always @(*) begin
     case(i_opcode)
         OP_ADDI, OP_ADD: alu_result = i_sr1_val + i_sr2_val;
         OP_NAND: alu_result = ~(i_sr1_val & i_sr2_val);
-        OP_JALR: alu_result = i_pc;
+        OP_JALR: alu_result = i_pc + 1;
         OP_LEA: alu_result = i_target_address;
         OP_SKP: alu_result = i_sr1_val - i_sr2_val;
         default: alu_result = 0;

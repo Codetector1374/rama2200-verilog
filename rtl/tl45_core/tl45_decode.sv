@@ -63,13 +63,21 @@ localparam OP_ADD = 4'b0000,
 // Always decode
 wire [3:0] opcode;
 assign opcode = i_buf_inst[31:28];
+reg [3:0] trans_op;
+always @(*) begin
+    // OPCODE DECODE
+    case(i_buf_inst[31:28])
+        OP_HALT: trans_op = OP_GOTO;
+        default: trans_op = i_buf_inst[31:28];
+    endcase
+end
 reg [3:0] dr, sr1, sr2;
 reg [31:0] immvalue;
 
 function [31:0] computePcOffset;
 input [31:0] pc;
 input [19:0] offset;
-assign computePcOffset = {{12{offset[19]}}, offset[19:0]} + pc;
+assign computePcOffset = {{12{offset[19]}}, offset[19:0]} + pc + 1;
 endfunction
 
 always @(*) begin
@@ -123,6 +131,12 @@ always @(*) begin
             sr2 = 0;
             immvalue = computePcOffset(i_buf_pc, i_buf_inst[19:0]); // Target Address
         end
+        OP_HALT: begin
+            dr = 0;
+            sr1 = 0;
+            sr2 = 0;
+            immvalue = i_buf_pc;
+        end
         default: begin
             dr = 0;
             sr1 = 0;
@@ -144,7 +158,7 @@ always @(posedge i_clk) begin
     end
     else if (!i_pipe_stall) begin
         o_buf_pc <= i_buf_pc;
-        o_buf_opcode <= i_buf_inst[31:28];
+        o_buf_opcode <= trans_op;
         o_buf_skp_mode <= i_buf_inst[24];
         o_buf_dr <= dr;
         o_buf_sr1 <= sr1;

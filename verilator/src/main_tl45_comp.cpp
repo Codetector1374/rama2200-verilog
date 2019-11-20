@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
   TESTBENCH<Vtl45_comp> *tb = new TESTBENCH<Vtl45_comp>();
 
    auto &ram = tb->m_core->tl45_comp__DOT__my_mem__DOT__mem;
-//#define LOAD
+#define LOAD
 #ifdef LOAD
 
   if (argc == 1) {
@@ -262,8 +262,9 @@ int main(int argc, char **argv) {
   ram[1] = 0x01100001;
   ram[2] = 0x01100001;
   ram[3] = 0x01100001;
-  for (int i = 3; i < 40; i++)
+  for (int i = 3; i < 30; i++)
     ram[i] = 0x01100001;
+  ram[30] = 0x70000000;
 #endif
 
 #if 1
@@ -301,8 +302,8 @@ int main(int argc, char **argv) {
 
 #if DO_TRACE
     if (tb->m_tickcount % 10 == 0) {
-//      std::cout << "SP: " << std::hex << tb->m_core->tl45_comp__DOT__dprf__DOT__registers[14] << "\n";
-      std::cout << "PC: " << std::hex << tb->m_core-> tl45_comp__DOT__fetch__DOT__o_buf_pc<< "\n";
+      std::cout << "PC: " << std::hex << tb->m_core-> tl45_comp__DOT__fetch__DOT__o_buf_pc
+      << "  SP: " << tb->m_core->tl45_comp__DOT__dprf__DOT__registers[12] << std::endl;
     }
 #else
     if (tb->m_tickcount % 100000 == 0) {
@@ -315,6 +316,6 @@ int main(int argc, char **argv) {
   }
 
 #endif
-
+    std::cout << "ram 14: " << std::hex << ram[14] << std::endl;
   exit(EXIT_SUCCESS);
 }
