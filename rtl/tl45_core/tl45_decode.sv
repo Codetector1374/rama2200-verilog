@@ -123,7 +123,7 @@ always @(*) begin
             dr = 0;
             sr1 = i_buf_inst[23:20];
             sr2 = i_buf_inst[3:0];
-            immvalue = 0;
+            immvalue = computePcOffset(i_buf_pc, 20'h1);
         end
         OP_LEA: begin
             dr = i_buf_inst[27:24];

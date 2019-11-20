@@ -295,7 +295,7 @@ int main(int argc, char **argv) {
 
   SerialDevice s(bus);
 
-  while (!tb->done() && (!(DO_TRACE) || tb->m_tickcount < 100 * 20)) {
+  while (!tb->done() && (!(DO_TRACE) || tb->m_tickcount < 100 * 30)) {
     tb->tick();
 
     s.eval();
