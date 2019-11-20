@@ -1,0 +1,60 @@
+[*]
+[*] GTKWave Analyzer v3.3.102 (w)1999-2019 BSI
+[*] Wed Nov 20 05:57:42 2019
+[*]
+[dumpfile] "/home/codetector/projects/cs2200/rama2200-verilog/verilator/cmake-build-debug/trace.vcd"
+[dumpfile_mtime] "Wed Nov 20 05:56:55 2019"
+[dumpfile_size] 872350
+[savefile] "/home/codetector/projects/cs2200/rama2200-verilog/verilator/debug_wave_setup.gtkw"
+[timestart] 503
+[size] 2556 1396
+[pos] -1 -1
+*-4.000000 541 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.tl45_comp.
+[sst_width] 348
+[signals_width] 321
+[sst_expanded] 1
+[sst_vpaned_height] 429
+@28
+TOP.tl45_comp.i_clk
+@200
+-FETCH
+@22
+TOP.tl45_comp.fetch_buf_inst[31:0]
+TOP.tl45_comp.fetch_buf_pc[31:0]
+@28
+TOP.tl45_comp.out_fetch_cache_hit
+@200
+-DECODE
+@22
+TOP.tl45_comp.decode_buf_pc[31:0]
+TOP.tl45_comp.decode_buf_opcode[3:0]
+TOP.tl45_comp.decode_buf_dr[3:0]
+TOP.tl45_comp.decode_buf_sr1[3:0]
+TOP.tl45_comp.decode_buf_sr2[3:0]
+TOP.tl45_comp.decode_buf_imm[31:0]
+@28
+TOP.tl45_comp.decode_buf_skp_mode
+@200
+-Register Read
+@22
+TOP.tl45_comp.rr_buf_pc[31:0]
+TOP.tl45_comp.rr_buf_opcode[3:0]
+TOP.tl45_comp.rr_buf_dr[3:0]
+TOP.tl45_comp.rr_buf_sr1_val[31:0]
+TOP.tl45_comp.rr_buf_sr2_val[31:0]
+TOP.tl45_comp.rr_buf_target_address[31:0]
+@28
+TOP.tl45_comp.rr_buf_skp_mode
+@200
+-ALU
+@22
+TOP.tl45_comp.alu_buf_dr[3:0]
+TOP.tl45_comp.alu_buf_value[31:0]
+@28
+TOP.tl45_comp.alu_buf_ld_newpc
+@22
+TOP.tl45_comp.alu_buf_br_pc[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

@@ -136,9 +136,9 @@ module tl45_comp(
     // rr buffer
     wire [3:0] rr_buf_opcode;
     wire [3:0] rr_buf_dr;
-    wire [3:0] rr_buf_jmp_cond;
     wire [31:0] rr_buf_sr1_val, rr_buf_sr2_val, rr_buf_pc;
-    wire [31:0] rr_buf_target_address_offset; // Target Jump Address Offset
+    wire [31:0] rr_buf_target_address; // Target Jump Address Offset
+    wire rr_buf_skp_mode;
 
     // ALU buffer
     wire [31:0] alu_buf_value;
@@ -229,42 +229,40 @@ module tl45_comp(
         .o_buf_imm(decode_buf_imm)
     );
 
-    // tl45_register_read rr(
-    //     .i_clk(i_clk),
-    //     .i_reset(reset),
-    //     .i_pipe_stall(stall_rr_alu || stall_rr_mem),
-    //     .o_pipe_stall(stall_decode_rr),
-    //     .i_pipe_flush(flush_rr_alu || flush_rr_mem),
-    //     .o_pipe_flush(flush_decode_rr),
+    tl45_register_read rr(
+        .i_clk(i_clk),
+        .i_reset(reset),
+        .i_pipe_stall(stall_rr_alu || stall_rr_mem),
+        .o_pipe_stall(stall_decode_rr),
+        .i_pipe_flush(flush_rr_alu || flush_rr_mem),
+        .o_pipe_flush(flush_decode_rr),
 
-    //     .i_opcode(decode_buf_opcode),
-    //     .i_ri(decode_buf_ri),
-    //     .i_dr(decode_buf_dr),
-    //     .i_sr1(decode_buf_sr1),
-    //     .i_sr2(decode_buf_sr2),
-    //     .i_imm32(decode_buf_imm),
-    //     .i_pc(decode_buf_pc),
-    //     .i_decode_err(decode_decode_err),
+        .i_pc(decode_buf_pc),
+        .i_opcode(decode_buf_opcode),
+        .i_skp_mode(decode_buf_skp_mode),
+        .i_dr(decode_buf_dr),
+        .i_sr1(decode_buf_sr1),
+        .i_sr2(decode_buf_sr2),
+        .i_imm32(decode_buf_imm),
 
-    //     .o_dprf_read_a1(dprf_reg1),
-    //     .o_dprf_read_a2(dprf_reg2),
-    //     .i_dprf_d1(dprf_reg1_val),
-    //     .i_dprf_d2(dprf_reg2_val),
+        .o_dprf_read_a1(dprf_reg1),
+        .o_dprf_read_a2(dprf_reg2),
+        .i_dprf_d1(dprf_reg1_val),
+        .i_dprf_d2(dprf_reg2_val),
 
-    //     .i_of1_reg(of1_reg),
-    //     .i_of1_data(of1_val),
-    //     .i_of2_reg(of2_reg),
-    //     .i_of2_data(of2_val),
+        .i_of1_reg(of1_reg),
+        .i_of1_data(of1_val),
+        .i_of2_reg(of2_reg),
+        .i_of2_data(of2_val),
 
-    //     .o_opcode(rr_buf_opcode),
-    //     .o_dr(rr_buf_dr),
-    //     .o_jmp_cond(rr_buf_jmp_cond),
-    //     .o_sr1_val(rr_buf_sr1_val),
-    //     .o_sr2_val(rr_buf_sr2_val),
-    //     .o_target_address_offset(rr_buf_target_address_offset),
-    //     .o_pc(rr_buf_pc),
-    //     .o_decode_err(rr_decode_err)
-    // );
+        .o_pc(rr_buf_pc),
+        .o_opcode(rr_buf_opcode),
+        .o_dr(rr_buf_dr),
+        .o_skp_mode(rr_buf_skp_mode),
+        .o_sr1_val(rr_buf_sr1_val),
+        .o_sr2_val(rr_buf_sr2_val),
+        .o_target_address(rr_buf_target_address)
+    );
 
     // wire rr_decode_err;
 
@@ -272,34 +270,33 @@ module tl45_comp(
     // assign o_lwopcode = rr_buf_pc[7:0];
     // assign o_valid = !(stall_rr_alu || stall_rr_mem);
 
-    // assign of1_reg = of1_reg_alu != 0 ? of1_reg_alu : of1_reg_mem;
-    // assign of1_val = of1_reg_alu != 0 ? of1_val_alu : of1_val_mem;
+    assign of1_reg = of1_reg_alu != 0 ? of1_reg_alu : of1_reg_mem;
+    assign of1_val = of1_reg_alu != 0 ? of1_val_alu : of1_val_mem;
 
-    // tl45_alu alu(
-    //     .i_clk(i_clk),
-    //     .i_reset(reset),
-    //     .i_pipe_stall(stall_alu_wb),
-    //     .o_pipe_stall(stall_rr_alu),
-    //     .i_pipe_flush(0),
-    //     .o_pipe_flush(flush_rr_alu),
+    tl45_alu alu(
+        .i_clk(i_clk),
+        .i_reset(reset),
+        .i_pipe_stall(stall_alu_wb),
+        .o_pipe_stall(stall_rr_alu),
+        .i_pipe_flush(0),
+        .o_pipe_flush(flush_rr_alu),
 
-    //     .i_opcode(rr_buf_opcode),
-    //     .i_dr(rr_buf_dr),
-    //     .i_jmp_cond(rr_buf_jmp_cond),
-    //     .i_sr1_val(rr_buf_sr1_val),
-    //     .i_sr2_val(rr_buf_sr2_val),
-    //     .i_target_offset(rr_buf_target_address_offset),
-    //     .i_pc(rr_buf_pc),
-    //     .i_decode_err(rr_decode_err),
+        .i_pc(rr_buf_pc),
+        .i_opcode(rr_buf_opcode),
+        .i_dr(rr_buf_dr),
+        .i_skp_mode(rr_buf_skp_mode),
+        .i_sr1_val(rr_buf_sr1_val),
+        .i_sr2_val(rr_buf_sr2_val),
+        .i_target_address(rr_buf_target_address),
 
-    //     .o_of_reg(of1_reg_alu),
-    //     .o_of_val(of1_val_alu),
+        .o_of_reg(of1_reg_alu),
+        .o_of_val(of1_val_alu),
 
-    //     .o_dr(alu_buf_dr),
-    //     .o_value(alu_buf_value),
-    //     .o_ld_newpc(alu_buf_ld_newpc),
-    //     .o_br_pc(alu_buf_br_pc)
-    // );
+        .o_dr(alu_buf_dr),
+        .o_value(alu_buf_value),
+        .o_ld_newpc(alu_buf_ld_newpc),
+        .o_br_pc(alu_buf_br_pc)
+    );
 
     // tl45_memory memory(
     //     .i_clk(i_clk),
@@ -336,21 +333,21 @@ module tl45_comp(
     //     .o_br_pc(mem_buf_br_pc)
     // );
 
-    // tl45_writeback writeback(
-    //     .i_clk(i_clk),
-    //     .i_reset(reset),
-    //     .o_pipe_stall(stall_alu_wb),
+    tl45_writeback writeback(
+        .i_clk(i_clk),
+        .i_reset(reset),
+        .o_pipe_stall(stall_alu_wb),
 
-    //     .i_buf_dr(alu_buf_dr != 0 ? alu_buf_dr : mem_buf_dr),
-    //     .i_buf_val(alu_buf_dr != 0 ? alu_buf_value : mem_buf_value),
+        .i_buf_dr(alu_buf_dr != 0 ? alu_buf_dr : mem_buf_dr),
+        .i_buf_val(alu_buf_dr != 0 ? alu_buf_value : mem_buf_value),
 
-    //     .o_fwd_reg(of2_reg),
-    //     .o_fwd_val(of2_val),
+        .o_fwd_reg(of2_reg),
+        .o_fwd_val(of2_val),
 
-    //     .o_rf_en(dprf_we_wreg),
-    //     .o_rf_reg(dprf_wreg),
-    //     .o_rf_val(dprf_wreg_val)
-    // );
+        .o_rf_en(dprf_we_wreg),
+        .o_rf_reg(dprf_wreg),
+        .o_rf_val(dprf_wreg_val)
+    );
 
     // Wishbone master arbitration
     assign dfetch_i_wb_data = ibus_i_wb_data;
