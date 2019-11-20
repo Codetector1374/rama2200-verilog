@@ -128,13 +128,13 @@ module tl45_comp(
 
     // decode buffer
     wire [31:0] decode_buf_pc;
-    wire [4:0] decode_buf_opcode;
-    wire decode_buf_ri;
+    wire [3:0] decode_buf_opcode;
+    wire decode_buf_skp_mode;
     wire [3:0] decode_buf_dr, decode_buf_sr1, decode_buf_sr2;
     wire [31:0] decode_buf_imm;
 
     // rr buffer
-    wire [4:0] rr_buf_opcode;
+    wire [3:0] rr_buf_opcode;
     wire [3:0] rr_buf_dr;
     wire [3:0] rr_buf_jmp_cond;
     wire [31:0] rr_buf_sr1_val, rr_buf_sr2_val, rr_buf_pc;
@@ -222,7 +222,7 @@ module tl45_comp(
 
         .o_buf_pc(decode_buf_pc),
         .o_buf_opcode(decode_buf_opcode),
-        .o_buf_ri(decode_buf_ri),
+        .o_buf_skp_mode(decode_buf_skp_mode),
         .o_buf_dr(decode_buf_dr),
         .o_buf_sr1(decode_buf_sr1),
         .o_buf_sr2(decode_buf_sr2),

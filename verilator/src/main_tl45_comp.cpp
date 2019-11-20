@@ -258,10 +258,13 @@ int main(int argc, char **argv) {
 
 
 #else
-  ram[0] = 0x0d20FFFF;
-  ram[1] = 0x0d100003;
-  ram[2] = 0xb8312000;
-  ram[3] = 0x08403000;
+  ram[0] = 0x21000001;
+  ram[1] = 0x21000002;
+  ram[2] = 0x21000003;
+  ram[3] = 0x21000004;
+  ram[4] = 0x21000005;
+  ram[5] = 0x21000006;
+  ram[6] = 0x21000007;
 #endif
 
 #if 1

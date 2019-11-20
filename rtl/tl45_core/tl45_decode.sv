@@ -3,7 +3,6 @@
 module tl45_decode(
     i_clk, i_reset,
     i_pipe_stall, o_pipe_stall,
-    i_stage_flush,
     i_pipe_flush, o_pipe_flush,
 
     // Buffer In
@@ -38,7 +37,7 @@ assign o_pipe_flush = i_pipe_flush;
 assign o_pipe_stall = i_pipe_stall;
 
 wire current_stage_flush;
-assign current_stage_flush = i_pipe_flush || i_stage_flush;
+assign current_stage_flush = i_pipe_flush;
 
 initial begin
     o_buf_pc = 0;
@@ -66,6 +65,12 @@ wire [3:0] opcode;
 assign opcode = i_buf_inst[31:28];
 reg [3:0] dr, sr1, sr2;
 reg [31:0] immvalue;
+
+function [31:0] computePcOffset;
+input [31:0] pc;
+input [19:0] offset;
+assign computePcOffset = {{12{offset[19]}}, offset[19:0]} + pc;
+endfunction
 
 always @(*) begin
     case(opcode)
@@ -98,8 +103,7 @@ always @(*) begin
             dr = 0;
             sr1 = 0;
             sr2 = 0;
-            // Only the lower 16 bits are added, since memory is only 16bits long
-            immvalue = {15'h0, (i_buf_pc + i_buf_inst[15:0])}; // Target Address
+            immvalue = computePcOffset(i_buf_pc, i_buf_inst[19:0]); // Target Address
         end
         OP_JALR: begin
             dr = i_buf_inst[27:24];
@@ -117,8 +121,7 @@ always @(*) begin
             dr = i_buf_inst[27:24];
             sr1 = 0;
             sr2 = 0;
-            // Only the lower 16 bits are added, since memory is only 16bits long
-            immvalue = {15'h0, (i_buf_pc + i_buf_inst[15:0])}; // Target Address
+            immvalue = computePcOffset(i_buf_pc, i_buf_inst[19:0]); // Target Address
         end
         default: begin
             dr = 0;
